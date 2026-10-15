@@ -96,6 +96,63 @@ export const certifications = [
   'JPMorgan Chase & Co. — Software Engineering Virtual Experience',
 ]
 
+export interface Certificate {
+  id: string
+  /** What the certificate is for. */
+  title: string
+  issuer: string
+  /** Shown as a small label on the card. */
+  kind: 'Recognition' | 'Internship' | 'Training'
+  period: string
+  /** One line on what it covers. */
+  detail: string
+  /** Files in public/certificates: `<id>.webp` (full) and `<id>-thumb.webp`. */
+  width: number
+  height: number
+  thumbWidth: number
+  thumbHeight: number
+}
+
+/** Scanned certificates, newest first. Images live in public/certificates. */
+export const certificates: Certificate[] = [
+  {
+    id: 'micronix-appreciation',
+    title: 'Certificate of Appreciation',
+    issuer: 'Micronix Systems Pvt. Ltd.',
+    kind: 'Recognition',
+    period: 'Aug 2026',
+    detail: 'For exceptional performance and contributions as a Software Developer.',
+    width: 1536,
+    height: 1024,
+    thumbWidth: 760,
+    thumbHeight: 507,
+  },
+  {
+    id: 'railtel-internship',
+    title: 'IoT Sensor Visualization Internship',
+    issuer: 'RailTel Corporation of India Ltd.',
+    kind: 'Internship',
+    period: 'Jan — Jun 2025',
+    detail: 'Internship at the GM/CNOC office, Shastri Park, Delhi.',
+    width: 1541,
+    height: 1020,
+    thumbWidth: 760,
+    thumbHeight: 503,
+  },
+  {
+    id: 'tata-steel-training',
+    title: 'Vocational Training — Prashikshan 2024',
+    issuer: 'Tata Steel Ltd. · Shavak Nanavati Technical Institute',
+    kind: 'Training',
+    period: 'May — Jul 2024',
+    detail: 'IT Services · Project: Calibration Due-Date Monitoring System.',
+    width: 1080,
+    height: 1027,
+    thumbWidth: 760,
+    thumbHeight: 723,
+  },
+]
+
 export interface SkillGroup {
   id: string
   title: string

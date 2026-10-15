@@ -105,20 +105,37 @@ export function SignalField() {
 
     resize()
     draw()
+    // hold the animation until the page has loaded and gone idle, so it doesn't compete with first render
+    let deferred = true
+    const begin = () => {
+      deferred = false
+      if (visible && !document.hidden) start()
+    }
+    let visible = false
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1))
+    const kick = () => window.setTimeout(() => idle(begin), 1200)
+    if (document.readyState === 'complete') kick()
+    else window.addEventListener('load', kick, { once: true })
     const ro = new ResizeObserver(() => {
       resize()
       draw()
     })
     ro.observe(canvas)
-    const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()))
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting
+      if (deferred) return
+      if (visible) start()
+      else stop()
+    })
     io.observe(canvas)
-    const onVis = () => (document.hidden ? stop() : start())
+    const onVis = () => (document.hidden || deferred ? stop() : start())
     document.addEventListener('visibilitychange', onVis)
     window.addEventListener('pointermove', onMove, { passive: true })
     document.addEventListener('pointerleave', onLeave)
 
     return () => {
       stop()
+      window.removeEventListener('load', kick)
       ro.disconnect()
       io.disconnect()
       document.removeEventListener('visibilitychange', onVis)

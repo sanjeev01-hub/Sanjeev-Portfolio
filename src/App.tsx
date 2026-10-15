@@ -1,19 +1,16 @@
 import { AnimatePresence, MotionConfig } from 'motion/react'
-import { useCallback, useEffect, useState } from 'react'
-import { About } from './components/About'
-import { Approach } from './components/Approach'
-import { CaseStudy } from './components/CaseStudy'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Cursor, Preloader, ScrollProgress, Spotlight } from './components/Chrome'
-import { Contact, Footer } from './components/Contact'
-import { Experience } from './components/Experience'
 import { Hero } from './components/Hero'
-import { Live } from './components/live/Live'
 import { LiveProvider } from './components/live/LiveContext'
 import { Marquee } from './components/Marquee'
 import { Nav } from './components/Nav'
-import { Skills } from './components/Skills'
-import { Work } from './components/Work'
 import { projects } from './content/projects'
+
+// Below-the-fold content and the case-study overlay load as separate chunks.
+const BelowFold = lazy(() => import('./components/BelowFold'))
+const Footer = lazy(() => import('./components/Contact').then((m) => ({ default: m.Footer })))
+const CaseStudy = lazy(() => import('./components/CaseStudy').then((m) => ({ default: m.CaseStudy })))
 
 const stack = ['React.js', 'React Native', 'Python', 'FastAPI', 'Flask', 'REST APIs', 'MySQL', 'InfluxDB', 'MQTT', 'Streamlit', 'Docker', 'Git']
 
@@ -78,16 +75,14 @@ export default function App() {
         <main id="main">
           <Hero ready={ready} />
           <Marquee items={stack} />
-          <Work />
-          <Live />
-          <About />
-          <Skills />
-          <Experience />
-          <Approach />
-          <Contact />
+          <Suspense fallback={<div className="below-fold-placeholder" />}>
+            <BelowFold />
+          </Suspense>
         </main>
-        <Footer />
-        <AnimatePresence>{project && <CaseStudy key="case" project={project} onClose={close} />}</AnimatePresence>
+        <Suspense fallback={null}>
+          <Footer />
+          <AnimatePresence>{project && <CaseStudy key="case" project={project} onClose={close} />}</AnimatePresence>
+        </Suspense>
       </LiveProvider>
     </MotionConfig>
   )

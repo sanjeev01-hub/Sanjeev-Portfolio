@@ -1,3 +1,29 @@
+/* Local fallbacks sized to match the web fonts, so text doesn't reflow when they arrive (no layout shift). */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial'), local('Roboto'), local('Helvetica');
+  size-adjust: 106.93%;
+  ascent-override: 90.6%;
+  descent-override: 22.56%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Space Grotesk Fallback';
+  src: local('Arial'), local('Roboto'), local('Helvetica');
+  size-adjust: 109.15%;
+  ascent-override: 90.15%;
+  descent-override: 26.75%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'JetBrains Mono Fallback';
+  src: local('Courier New'), local('Courier'), local('monospace');
+  size-adjust: 99.98%;
+  ascent-override: 102.02%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 /* ═══════════════════════════════ TOKENS ═══════════════════════════════ */
 :root {
   --bg: #0a0a0b;
@@ -32,9 +58,9 @@
   --serious: #ef6b5b;
   --critical: #c08af2;
 
-  --display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --display: 'Space Grotesk', 'Space Grotesk Fallback', ui-sans-serif, system-ui, sans-serif;
+  --body: 'Inter', 'Inter Fallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', 'JetBrains Mono Fallback', ui-monospace, 'SFMono-Regular', Consolas, monospace;
 
   --gutter: clamp(16px, 4.2vw, 56px);
   --max: 1440px;

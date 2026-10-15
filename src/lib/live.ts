@@ -1,23 +1,37 @@
 import { site } from '../config/site'
+import type { Place } from './visitor'
 
 const TIMEOUT_MS = 12_000
+/** How old a cached reading may be and still stand in for a failed request. */
+const STALE_LIMIT_MS = 24 * 60 * 60_000
 
-/** fetch + JSON with a timeout and a short sessionStorage cache (keeps us under API rate limits). */
-export async function fetchJSON<T>(
-  url: string,
-  cacheKey: string,
-  maxAgeMs: number,
-  signal?: AbortSignal,
-): Promise<{ data: T; fetchedAt: number }> {
+type Cached<T> = { data: T; fetchedAt: number }
+
+/* localStorage so the cache is shared across tabs and reloads; falls back to nothing if storage is blocked */
+function readCache<T>(key: string): Cached<T> | null {
   try {
-    const raw = sessionStorage.getItem(cacheKey)
-    if (raw) {
-      const cached = JSON.parse(raw) as { data: T; fetchedAt: number }
-      if (Date.now() - cached.fetchedAt < maxAgeMs) return cached
-    }
+    const raw = localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as Cached<T>) : null
   } catch {
-    /* storage unavailable — fetch normally */
+    return null
   }
+}
+function writeCache<T>(key: string, value: Cached<T>) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    /* ignore quota / privacy-mode errors */
+  }
+}
+
+/**
+ * fetch + JSON with a timeout and a persistent cache (keeps us under API rate limits).
+ * If the request fails but an earlier reading exists, that reading is returned instead —
+ * its `fetchedAt` shows how old it is.
+ */
+export async function fetchJSON<T>(url: string, cacheKey: string, maxAgeMs: number, signal?: AbortSignal): Promise<Cached<T>> {
+  const cached = readCache<T>(cacheKey)
+  if (cached && Date.now() - cached.fetchedAt < maxAgeMs) return cached
 
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
@@ -25,17 +39,18 @@ export async function fetchJSON<T>(
   try {
     const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } })
     if (!res.ok) {
-      if (res.status === 403 || res.status === 429) throw new Error('Rate limit reached. Try again in a few minutes.')
+      if (res.status === 403 || res.status === 429) {
+        const reset = Number(res.headers.get('x-ratelimit-reset'))
+        const at = reset ? ` after ${new Date(reset * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ' in a few minutes'
+        throw new Error(`Rate limit reached. Try again${at}.`)
+      }
       throw new Error(`Request failed (${res.status})`)
     }
     const result = { data: (await res.json()) as T, fetchedAt: Date.now() }
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(result))
-    } catch {
-      /* ignore quota / privacy-mode errors */
-    }
+    writeCache(cacheKey, result)
     return result
   } catch (err) {
+    if (!signal?.aborted && cached && Date.now() - cached.fetchedAt < STALE_LIMIT_MS) return cached
     if ((err as Error).name === 'AbortError') throw new Error('The request timed out.', { cause: err })
     throw err
   } finally {
@@ -108,21 +123,23 @@ interface AirResponse {
   hourly: { time: string[]; pm2_5?: (number | null)[]; carbon_dioxide?: (number | null)[] }
 }
 
-export async function getEnvironment(signal?: AbortSignal, force = false) {
-  const { latitude, longitude, timezone, refreshMinutes } = site.live
+export async function getEnvironment(place: Place, signal?: AbortSignal, force = false) {
+  const { latitude, longitude, timezone } = place
+  const { refreshMinutes } = site.live
+  const at = `${latitude.toFixed(2)},${longitude.toFixed(2)}`
   const base = `latitude=${latitude}&longitude=${longitude}&timezone=${encodeURIComponent(timezone)}&past_days=1&forecast_days=1`
   const maxAge = force ? 0 : refreshMinutes * 60_000
   const [w, a] = await Promise.all([
     fetchJSON<WeatherResponse>(
       `https://api.open-meteo.com/v1/forecast?${base}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,surface_pressure,cloud_cover,is_day,weather_code&hourly=temperature_2m,relative_humidity_2m`,
-      'live:weather',
+      `live:weather:${at}`,
       maxAge,
       signal,
     ),
     // Air quality is optional — weather alone is still useful if this fails.
     fetchJSON<AirResponse>(
       `https://air-quality-api.open-meteo.com/v1/air-quality?${base}&current=us_aqi,us_aqi_pm2_5,us_aqi_pm10,us_aqi_carbon_monoxide,us_aqi_nitrogen_dioxide,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,carbon_dioxide&hourly=pm2_5,carbon_dioxide`,
-      'live:air-v2',
+      `live:air-v2:${at}`,
       maxAge,
       signal,
     ).catch(() => null),

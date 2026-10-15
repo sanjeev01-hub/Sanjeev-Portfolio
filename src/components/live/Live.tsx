@@ -2,15 +2,17 @@ import { AnimatePresence, motion } from 'motion/react'
 import { ArrowUpRight, CircleAlert, Cloud, Droplets, FolderGit2, GitCommitHorizontal, Gauge, MapPin, RotateCw, Thermometer, Wind } from 'lucide-react'
 import { useState } from 'react'
 import { site } from '../../config/site'
-import { useNow } from '../../hooks/useNow'
+import { useNow, zoneLabel } from '../../hooks/useNow'
 import { aqiLevel, describeWeather, timeAgo, type EnvSnapshot, type GhEvent, type GithubSnapshot } from '../../lib/live'
 import { ease, fadeUp, inView, stagger } from '../../lib/motion'
 import { Github } from '../ui/BrandIcons'
 import { CountUp, SectionHeader } from '../ui/Reveal'
 import { LiveChart, type Band } from './LiveChart'
-import { useLiveData } from './liveStore'
+import { formatCoords } from '../../lib/visitor'
+import { useLiveData, usePlace } from './liveStore'
 
 export function Live() {
+  const { place, locating } = usePlace()
   return (
     <section id="live" className="section live" aria-label="Live data">
       <div className="container">
@@ -21,7 +23,7 @@ export function Live() {
           lede={
             <>
               The same pattern I use in IoT dashboards — poll a source, normalise it, visualise it — running on public data. Environmental readings for{' '}
-              {site.live.place} come from Open-Meteo; activity comes from my public GitHub.
+              {locating ? 'your location' : place.detected ? `${place.city} — where you are right now —` : place.city} come from Open-Meteo; activity comes from my public GitHub.
             </>
           }
         />
@@ -128,6 +130,7 @@ const nums = (arr: (number | null)[]) => arr.filter((v): v is number => v != nul
 
 function EnvironmentPanel() {
   const { env } = useLiveData()
+  const { place, locating } = usePlace()
   const { data, status, error, fetchedAt, refreshing, retry } = env
 
   return (
@@ -142,10 +145,10 @@ function EnvironmentPanel() {
       <header className="panel__head">
         <div>
           <h3 id="env-title" className="panel__title">
-            <MapPin aria-hidden size={16} /> {site.live.place}, India
+            <MapPin aria-hidden size={16} /> {locating ? 'Locating you…' : [place.city, place.country].filter((s, i, a) => s && a.indexOf(s) === i).join(', ')}
           </h3>
           <p className="mono muted panel__sub">
-            {site.live.latitude.toFixed(2)}°N {site.live.longitude.toFixed(2)}°E · environment monitor
+            {formatCoords(place)} · {place.detected ? 'your location' : 'environment monitor'}
           </p>
         </div>
         <PanelStatus fetchedAt={fetchedAt} refreshing={refreshing} error={error} onRetry={retry} source="Open-Meteo" />
@@ -156,7 +159,7 @@ function EnvironmentPanel() {
       ) : !data ? (
         <EnvSkeleton />
       ) : (
-        <EnvBody data={data} />
+        <EnvBody data={data} zone={zoneLabel(place.timezone)} />
       )}
     </motion.article>
   )
@@ -174,7 +177,7 @@ function EnvSkeleton() {
   )
 }
 
-function EnvBody({ data }: { data: EnvSnapshot }) {
+function EnvBody({ data, zone }: { data: EnvSnapshot; zone: string }) {
   const [metric, setMetric] = useState<Metric>('temperature')
   const m = metrics.find((x) => x.id === metric)!
   const c = data.current
@@ -276,6 +279,7 @@ function EnvBody({ data }: { data: EnvSnapshot }) {
           label={m.label}
           color={m.color}
           bands={metric === 'pm25' ? pm25Bands : undefined}
+          zone={zone}
         />
         {metric === 'pm25' && <p className="env__legend mono muted">Shaded zones: US EPA AQI categories for PM2.5</p>}
         <details className="env__table">
@@ -285,7 +289,7 @@ function EnvBody({ data }: { data: EnvSnapshot }) {
               <caption className="sr-only">{m.label}, hourly, last 24 hours</caption>
               <thead>
                 <tr>
-                  <th scope="col">Time (IST)</th>
+                  <th scope="col">Time ({zone})</th>
                   <th scope="col">{m.label}</th>
                 </tr>
               </thead>

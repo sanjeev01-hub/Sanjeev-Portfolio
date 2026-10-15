@@ -19,6 +19,8 @@ interface Props {
   color?: string
   /** Optional reference zones drawn behind the line, e.g. AQI categories. */
   bands?: Band[]
+  /** Time-zone label for the hover readout, e.g. "IST". */
+  zone: string
 }
 
 function useWidth<T extends HTMLElement>() {
@@ -36,7 +38,7 @@ function useWidth<T extends HTMLElement>() {
 const hourLabel = (t: string) => t.slice(11, 16)
 
 /** Single-series line + area with crosshair tooltip and keyboard navigation. */
-export function LiveChart({ times, values, unit, decimals = 1, label, color = 'var(--accent)', bands }: Props) {
+export function LiveChart({ times, values, unit, decimals = 1, label, color = 'var(--accent)', bands, zone }: Props) {
   const [wrapRef, width] = useWidth<HTMLDivElement>()
   const [hover, setHover] = useState<number | null>(null)
   const gradId = useId()
@@ -198,7 +200,7 @@ export function LiveChart({ times, values, unit, decimals = 1, label, color = 'v
           }}
           aria-hidden
         >
-          <span className="mono muted">{hourLabel(times[active])} IST</span>
+          <span className="mono muted">{hourLabel(times[active])} {zone}</span>
           <b className="mono">
             <i className="lchart__swatch" style={{ background: color }} aria-hidden />
             {fmt(values[active])}

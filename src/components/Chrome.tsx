@@ -24,7 +24,10 @@ function introAlreadySeen() {
 
 /** A short counter + curtain on the first visit of a session. Calls onDone when the page should start animating. */
 export function Preloader({ onDone }: { onDone: () => void }) {
-  const [skip] = useState(() => introAlreadySeen() || window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  // phones skip the intro: it holds back first paint on slower devices
+  const [skip] = useState(
+    () => introAlreadySeen() || window.innerWidth < 768 || window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
   const [count, setCount] = useState(0)
   const [leaving, setLeaving] = useState(false)
   const [gone, setGone] = useState(skip)

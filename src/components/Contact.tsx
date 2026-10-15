@@ -2,7 +2,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { ArrowUp, ArrowUpRight, Check, Copy, Download, Mail, Phone } from 'lucide-react'
 import { useState } from 'react'
 import { site } from '../config/site'
-import { formatIST, useNow } from '../hooks/useNow'
+import { formatClock, useNow, zoneLabel } from '../hooks/useNow'
+import { usePlace } from './live/liveStore'
 import { fadeUp, inView, stagger } from '../lib/motion'
 import { Github, Linkedin } from './ui/BrandIcons'
 import { Magnetic } from './ui/Magnetic'
@@ -101,6 +102,7 @@ export function Contact() {
 
 export function Footer() {
   const now = useNow(1000)
+  const { place } = usePlace()
   return (
     <footer className="footer">
       <div className="container footer__inner">
@@ -108,7 +110,7 @@ export function Footer() {
           © {new Date().getFullYear()} {site.name}
         </p>
         <p className="mono muted footer__time">
-          {site.live.place} · {formatIST(now)} IST
+          {place.city} · {formatClock(now, place.timezone)} {zoneLabel(place.timezone)}
         </p>
         <div className="footer__right">
           <a className="link-arrow" href={site.contact.github} target="_blank" rel="noreferrer">

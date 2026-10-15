@@ -1,22 +1,33 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { nav, site } from '../config/site'
-import { formatIST, useNow } from '../hooks/useNow'
+import { formatClock, useNow, zoneLabel } from '../hooks/useNow'
 import { ease, easeInOut } from '../lib/motion'
 import { useHideOnScroll } from '../hooks/useHideOnScroll'
+import { usePlace } from './live/liveStore'
+import { SECTIONS_EVENT } from './sections'
+import { Logo } from './ui/Logo'
 
 function useActiveSection(ids: readonly string[]) {
   const [active, setActive] = useState<string | null>(null)
   useEffect(() => {
-    const els = ids.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[]
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) if (e.isIntersecting) setActive(e.target.id)
       },
       { rootMargin: '-45% 0px -50% 0px' },
     )
-    els.forEach((el) => io.observe(el))
-    return () => io.disconnect()
+    // sections below the hero mount after first render — observe them as they appear
+    const observe = () => ids.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) io.observe(el)
+    })
+    observe()
+    window.addEventListener(SECTIONS_EVENT, observe)
+    return () => {
+      window.removeEventListener(SECTIONS_EVENT, observe)
+      io.disconnect()
+    }
   }, [ids])
   return active
 }
@@ -28,6 +39,9 @@ export function Nav({ ready }: { ready: boolean }) {
   const active = useActiveSection(ids)
   const [open, setOpen] = useState(false)
   const now = useNow(1000)
+  const { place } = usePlace()
+  const time = formatClock(now, place.timezone)
+  const zone = zoneLabel(place.timezone)
 
   useEffect(() => {
     document.body.classList.toggle('is-locked', open)
@@ -47,10 +61,7 @@ export function Nav({ ready }: { ready: boolean }) {
       >
         <div className="nav__inner container">
           <a href="#top" className="nav__mark" aria-label={`${site.shortName}, back to top`}>
-            <span className="nav__mono" aria-hidden>
-              SS
-            </span>
-            <span className="nav__word">{site.shortName}</span>
+            <Logo height={30} />
           </a>
 
           <nav className="nav__links" aria-label="Primary">
@@ -67,9 +78,9 @@ export function Nav({ ready }: { ready: boolean }) {
           </nav>
 
           <div className="nav__aside">
-            <span className="nav__clock mono" title="Local time in Jamshedpur (IST)">
-              <span className="sr-only">Local time in India: </span>
-              {formatIST(now)} <span className="muted">IST</span>
+            <span className="nav__clock mono" title={`Local time in ${place.city} (${zone})`}>
+              <span className="sr-only">Local time in {place.city}: </span>
+              {time} <span className="muted">{zone}</span>
             </span>
             {site.availability.enabled && (
               <span className="nav__status">
@@ -125,7 +136,7 @@ export function Nav({ ready }: { ready: boolean }) {
                 transition={{ delay: 0.6, duration: 0.6 }}
               >
                 <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
-                <span className="mono muted">{formatIST(now)} IST</span>
+                <span className="mono muted">{time} {zone}</span>
               </motion.div>
             </nav>
           </motion.div>

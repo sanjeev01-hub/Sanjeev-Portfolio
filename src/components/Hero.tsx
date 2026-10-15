@@ -1,11 +1,10 @@
 import { motion, useScroll, useTransform } from 'motion/react'
 import { ArrowDownRight, ArrowRight, GitCommitHorizontal, Wind } from 'lucide-react'
 import { useRef } from 'react'
-import { site } from '../config/site'
-import { formatIST, useNow } from '../hooks/useNow'
+import { formatClock, useNow, zoneLabel } from '../hooks/useNow'
 import { aqiLevel, describeWeather, timeAgo } from '../lib/live'
 import { ease, maskUp, stagger } from '../lib/motion'
-import { useLiveData } from './live/liveStore'
+import { useLiveData, usePlace } from './live/liveStore'
 import { Magnetic } from './ui/Magnetic'
 import { SignalField } from './SignalField'
 
@@ -63,7 +62,8 @@ export function Hero({ ready }: { ready: boolean }) {
           animate={state}
           variants={stagger(0.1, 0.85)}
         >
-          <motion.p className="hero__lede" variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.9, ease } } }}>
+          {/* no fade: this paragraph is the page's largest paint, so it must be visible straight away */}
+          <motion.p className="hero__lede" variants={{ hidden: { y: 20 }, show: { y: 0, transition: { duration: 0.9, ease } } }}>
             I’m a software developer focused on building thoughtful web and mobile applications, connecting reliable backends, and turning
             complex workflows into usable products.
           </motion.p>
@@ -116,6 +116,7 @@ export function Hero({ ready }: { ready: boolean }) {
 function HeroTelemetry() {
   const { env, github } = useLiveData()
   const now = useNow(1000)
+  const { place, locating } = usePlace()
   const lastPush = github.data?.repos[0]?.pushed_at
   const aqi = env.data?.air.aqi
   const lvl = aqi != null ? aqiLevel(aqi) : null
@@ -125,9 +126,9 @@ function HeroTelemetry() {
     <a href="#live" className="tele spot" data-cursor="Live">
       <div className="tele__head">
         <span className="tele__label mono">
-          <span className="pulse-dot" aria-hidden /> Live · {site.live.place}
+          <span className="pulse-dot" aria-hidden /> Live · {locating ? 'Locating…' : place.city}
         </span>
-        <span className="mono tele__time">{formatIST(now)} IST</span>
+        <span className="mono tele__time">{formatClock(now, place.timezone)} {zoneLabel(place.timezone)}</span>
       </div>
 
       <div className="tele__main">

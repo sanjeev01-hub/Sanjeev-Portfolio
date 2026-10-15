@@ -5,8 +5,24 @@
  * by replacing a mockup with an <img> when you have them.
  */
 import { motion, useReducedMotion } from 'motion/react'
-import { CloudOff, Fan, Gauge, Lightbulb, RefreshCw, Thermometer, Droplets, Wind, Check } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  BatteryFull,
+  Check,
+  CloudOff,
+  Droplets,
+  Fan,
+  Fish,
+  Gauge,
+  Gavel,
+  Lightbulb,
+  RefreshCw,
+  Signal,
+  Thermometer,
+  TrendingUp,
+  Wifi,
+  Wind,
+} from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { MockupKind } from '../../content/projects'
 
 export function Mockup({ kind }: { kind: MockupKind }) {
@@ -26,65 +42,120 @@ function useTicker(values: number[], ms: number) {
   return values[i]
 }
 
+/** iPhone-style device: titanium frame, side buttons, Dynamic Island, status bar, home indicator. */
+function Phone({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`phone ${className}`}>
+      <span className="phone__btn phone__btn--action" />
+      <span className="phone__btn phone__btn--vol-up" />
+      <span className="phone__btn phone__btn--vol-down" />
+      <span className="phone__btn phone__btn--power" />
+      <div className="phone__bezel">
+        <div className="phone__screen">
+          <div className="phone__island" />
+          <div className="phone__status">
+            <span>9:41</span>
+            <span className="phone__icons">
+              <Signal size={9} strokeWidth={2.6} />
+              <Wifi size={9} strokeWidth={2.6} />
+              <BatteryFull size={11} strokeWidth={2.2} />
+            </span>
+          </div>
+          <div className="phone__body">{children}</div>
+          <div className="phone__home" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ───────────── 01 · Fish mandi ───────────── */
 
 const bids = [4280, 4310, 4350, 4395, 4420, 4460]
+const lots = [
+  { name: 'Katla', qty: '30 kg', status: 'Sold', tone: 'amber' },
+  { name: 'Pomfret', qty: '18 kg', status: 'Queued', tone: 'pink' },
+  { name: 'Hilsa', qty: '12 kg', status: 'Queued', tone: 'teal' },
+]
 
 function MandiMockup() {
   const bid = useTicker(bids, 1600)
+  const step = bids.indexOf(bid) + 1
   return (
     <div className="mk mk--mandi" aria-hidden>
-      <div className="phone">
-        <div className="phone__notch" />
-        <div className="phone__screen">
-          <div className="mk-app-bar">
-            <span className="mk-dot" />
-            <span>Auction floor</span>
-            <span className="mk-pill mk-pill--live">LIVE</span>
-          </div>
-          <div className="mk-lot">
-            <div className="mk-lot__top">
-              <span className="mk-k">LOT A-14</span>
-              <span className="mk-k">Supplier S-07</span>
-            </div>
-            <div className="mk-lot__name">Rohu · 42 kg</div>
-            <div className="mk-lot__bid">
-              <span className="mk-k">Current bid</span>
-              <motion.span key={bid} initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
-                ₹{bid.toLocaleString('en-IN')}
-              </motion.span>
-            </div>
-            <div className="mk-bar">
-              <motion.span animate={{ scaleX: (bids.indexOf(bid) + 1) / bids.length }} transition={{ duration: 0.6 }} />
-            </div>
-          </div>
-          <ul className="mk-list">
-            {['Katla · 30 kg', 'Pomfret · 18 kg', 'Hilsa · 12 kg'].map((l, i) => (
-              <li key={l}>
-                <span className="mk-avatar">{String.fromCharCode(66 + i)}</span>
-                <span>{l}</span>
-                <span className="mk-k">{i === 0 ? 'Sold' : 'Queued'}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mk-btn">Record transaction</div>
+      <Phone>
+        <div className="app-head">
+          <span className="app-icon">
+            <Fish size={12} strokeWidth={2.4} />
+          </span>
+          <span className="app-head__text">
+            <b>Auction floor</b>
+            <small>Market · Today</small>
+          </span>
+          <span className="mk-pill mk-pill--live">
+            <i /> LIVE
+          </span>
         </div>
-      </div>
+
+        <div className="lot">
+          <div className="lot__top">
+            <span className="lot__tag">LOT A-14</span>
+            <span className="mk-k">Supplier S-07</span>
+          </div>
+          <div className="lot__name">
+            <span className="lot__fish">
+              <Fish size={13} strokeWidth={2.2} />
+            </span>
+            Rohu <span>· 42 kg</span>
+          </div>
+          <div className="lot__bid">
+            <span className="mk-k">Current bid</span>
+            <motion.span key={bid} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
+              ₹{bid.toLocaleString('en-IN')}
+            </motion.span>
+          </div>
+          <div className="lot__bar">
+            <motion.span animate={{ scaleX: step / bids.length }} transition={{ duration: 0.6 }} />
+          </div>
+          <div className="lot__meta">
+            <span>
+              <Gavel size={9} /> {step + 2} bids
+            </span>
+            <span className="lot__up">
+              <TrendingUp size={9} /> rising
+            </span>
+          </div>
+        </div>
+
+        <ul className="lots">
+          {lots.map((l) => (
+            <li key={l.name}>
+              <span className={`lots__avatar lots__avatar--${l.tone}`}>{l.name[0]}</span>
+              <span className="lots__name">
+                {l.name} <small>· {l.qty}</small>
+              </span>
+              <span className={`lots__status lots__status--${l.status.toLowerCase()}`}>{l.status}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mk-btn">Record transaction</div>
+      </Phone>
 
       <div className="mk-float mk-float--settle">
         <div className="mk-k">Settlement · Today</div>
         <div className="mk-rows">
           <div>
             <span>Gross sales</span>
-            <span>Σ lots</span>
+            <span className="tone-green">Σ lots</span>
           </div>
           <div>
             <span>Agent commission</span>
-            <span>− rate</span>
+            <span className="tone-amber">− rate</span>
           </div>
           <div className="mk-rows__total">
             <span>Net to supplier</span>
-            <span>Calculated</span>
+            <span className="tone-blue">Calculated</span>
           </div>
         </div>
       </div>
@@ -111,9 +182,9 @@ function IotMockup() {
     <div className="mk mk--iot" aria-hidden>
       <div className="browser">
         <div className="browser__bar">
-          <i />
-          <i />
-          <i />
+          <i className="browser__dot browser__dot--red" />
+          <i className="browser__dot browser__dot--amber" />
+          <i className="browser__dot browser__dot--green" />
           <span className="browser__url">sensors · dashboard</span>
         </div>
         <div className="dash">
@@ -125,22 +196,22 @@ function IotMockup() {
           </aside>
           <div className="dash__main">
             <div className="dash__tiles">
-              <div>
+              <div className="tile tile--orange">
                 <Thermometer size={12} />
                 <span className="mk-k">Temp</span>
                 <b>24.6°</b>
               </div>
-              <div>
+              <div className="tile tile--blue">
                 <Droplets size={12} />
                 <span className="mk-k">Humidity</span>
                 <b>61%</b>
               </div>
-              <div className="is-accent">
+              <div className="tile tile--green">
                 <Gauge size={12} />
                 <span className="mk-k">CO₂ ppm</span>
                 <b>{co2}</b>
               </div>
-              <div>
+              <div className="tile tile--violet">
                 <Wind size={12} />
                 <span className="mk-k">Gas</span>
                 <b>OK</b>
@@ -149,24 +220,35 @@ function IotMockup() {
             <div className="dash__chart">
               <div className="dash__chart-head">
                 <span className="mk-k">InfluxDB · last 24 h</span>
-                <span className="mk-pill">MQTT ●</span>
+                <span className="mk-pill mk-pill--ok">MQTT ●</span>
               </div>
               <svg viewBox="0 0 300 80" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="iot-line" x1="0" x2="1">
+                    <stop offset="0" stopColor="#22d3ee" />
+                    <stop offset=".55" stopColor="#5b8cff" />
+                    <stop offset="1" stopColor="#a78bfa" />
+                  </linearGradient>
+                  <linearGradient id="iot-area" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0" stopColor="#5b8cff" stopOpacity=".35" />
+                    <stop offset="1" stopColor="#5b8cff" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
                 {[20, 40, 60].map((y) => (
                   <line key={y} x1="0" x2="300" y1={y} y2={y} className="dash__grid" />
                 ))}
-                <path d={`${iotPath} L300,80 L0,80 Z`} className="dash__area" />
-                <path d={iotPath} className="dash__line" pathLength={1} />
+                <path d={`${iotPath} L300,80 L0,80 Z`} fill="url(#iot-area)" />
+                <path d={iotPath} className="dash__line" stroke="url(#iot-line)" pathLength={1} />
               </svg>
             </div>
             <div className="dash__devices">
               <div>
-                <Fan size={13} />
+                <Fan size={13} className="tone-teal" />
                 <span>Exhaust fan</span>
                 <span className="mk-toggle is-on" />
               </div>
               <div>
-                <Lightbulb size={13} />
+                <Lightbulb size={13} className="tone-amber" />
                 <span>Relay 02</span>
                 <span className="mk-toggle" />
               </div>
@@ -175,7 +257,7 @@ function IotMockup() {
         </div>
       </div>
       <div className="mk-float mk-float--alert">
-        <span className="tone-dot tone-dot--warning" />
+        <span className="alert-dot" />
         <div>
           <b>Threshold alert</b>
           <span className="mk-k">CO₂ above configured limit</span>
@@ -186,6 +268,8 @@ function IotMockup() {
 }
 
 /* ───────────── 03 · React Native apps ───────────── */
+
+const recordTones = ['violet', 'blue', 'teal', 'amber', 'pink']
 
 function MobileMockup() {
   const reduce = useReducedMotion()
@@ -198,57 +282,66 @@ function MobileMockup() {
 
   return (
     <div className="mk mk--mobile" aria-hidden>
-      <div className="phone phone--back">
-        <div className="phone__notch" />
-        <div className="phone__screen">
-          <div className="mk-app-bar">
-            <span>New entry</span>
-          </div>
-          <div className="mk-form">
-            {['Item', 'Quantity', 'Location', 'Notes'].map((f) => (
-              <label key={f}>
-                <span className="mk-k">{f}</span>
-                <span className="mk-input" />
-              </label>
-            ))}
-          </div>
-          <div className="mk-btn">Save offline</div>
+      <Phone className="phone--back">
+        <div className="app-head">
+          <span className="app-icon app-icon--violet">+</span>
+          <span className="app-head__text">
+            <b>New entry</b>
+            <small>Saved on device</small>
+          </span>
         </div>
-      </div>
-      <div className="phone phone--front">
-        <div className="phone__notch" />
-        <div className="phone__screen">
-          <div className="mk-app-bar">
-            <span>Records</span>
-            <motion.span className={`mk-pill ${synced ? 'mk-pill--ok' : 'mk-pill--warn'}`} layout>
-              {synced ? <Check size={10} /> : <CloudOff size={10} />}
-              {synced ? 'Synced' : '3 queued'}
-            </motion.span>
-          </div>
-          <ul className="mk-list mk-list--records">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <li key={i}>
-                <span className="mk-avatar">{i + 1}</span>
-                <span className="mk-lines">
-                  <i style={{ width: `${70 - i * 7}%` }} />
-                  <i style={{ width: `${45 + i * 5}%` }} />
+        <div className="mk-form">
+          {['Item', 'Quantity', 'Location', 'Notes'].map((f, i) => (
+            <label key={f} className={i === 1 ? 'is-focus' : undefined}>
+              <span className="mk-k">{f}</span>
+              <span className="mk-input" />
+            </label>
+          ))}
+        </div>
+        <div className="mk-btn mk-btn--violet">Save offline</div>
+      </Phone>
+      <Phone className="phone--front">
+        <div className="app-head">
+          <span className="app-icon">
+            <RefreshCw size={11} strokeWidth={2.6} />
+          </span>
+          <span className="app-head__text">
+            <b>Records</b>
+            <small>Field app</small>
+          </span>
+          <motion.span className={`mk-pill ${synced ? 'mk-pill--ok' : 'mk-pill--warn'}`} layout>
+            {synced ? <Check size={9} /> : <CloudOff size={9} />}
+            {synced ? 'Synced' : '3 queued'}
+          </motion.span>
+        </div>
+        <ul className="lots lots--records">
+          {recordTones.map((tone, i) => (
+            <li key={tone}>
+              <span className={`lots__avatar lots__avatar--${tone}`}>{i + 1}</span>
+              <span className="mk-lines">
+                <i style={{ width: `${70 - i * 7}%` }} />
+                <i style={{ width: `${45 + i * 5}%` }} />
+              </span>
+              {i < 3 ? (
+                <motion.span
+                  className={`mk-sync ${synced ? 'is-ok' : 'is-pending'}`}
+                  animate={{ rotate: synced ? 0 : 360 }}
+                  transition={{ duration: 1.2, repeat: synced ? 0 : Infinity, ease: 'linear' }}
+                >
+                  {synced ? <Check size={10} /> : <RefreshCw size={10} />}
+                </motion.span>
+              ) : (
+                <span className="mk-sync is-ok">
+                  <Check size={10} />
                 </span>
-                {i < 3 ? (
-                  <motion.span className="mk-sync" animate={{ rotate: synced ? 0 : 360 }} transition={{ duration: 1.2, repeat: synced ? 0 : Infinity, ease: 'linear' }}>
-                    {synced ? <Check size={11} /> : <RefreshCw size={11} />}
-                  </motion.span>
-                ) : (
-                  <span className="mk-sync">
-                    <Check size={11} />
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </Phone>
       <div className="mk-float mk-float--api">
-        <span className="mono">GET /api/records</span>
+        <span className="mk-method">GET</span>
+        <span className="mono">/api/records</span>
         <span className={`mk-pill ${synced ? 'mk-pill--ok' : ''}`}>{synced ? '200' : '…'}</span>
       </div>
     </div>

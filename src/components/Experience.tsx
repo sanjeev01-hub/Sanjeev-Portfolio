@@ -3,6 +3,7 @@ import { Award } from 'lucide-react'
 import { useRef } from 'react'
 import { certifications, education, experience, type TimelineEntry } from '../content/profile'
 import { fadeUp, inView, stagger } from '../lib/motion'
+import { Certificates } from './Certificates'
 import { Reveal, SectionHeader } from './ui/Reveal'
 
 export function Experience() {
@@ -47,7 +48,7 @@ export function Experience() {
             </motion.ul>
 
             <Reveal>
-              <h3 className="eyebrow exp__label exp__label--gap">Certifications</h3>
+              <h3 className="eyebrow exp__label exp__label--gap">Online certifications</h3>
             </Reveal>
             <motion.ul className="certs" initial="hidden" whileInView="show" viewport={inView} variants={stagger(0.08)}>
               {certifications.map((c) => (
@@ -59,6 +60,8 @@ export function Experience() {
             </motion.ul>
           </aside>
         </div>
+
+        <Certificates />
       </div>
     </section>
   )
